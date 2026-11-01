@@ -241,11 +241,16 @@ async def extract_stream_format(
             "youtube": {
                 "skip": ["translated_subs", "dash"],
                 "player_client": (
-                    # When a PO token server is wired up, use web_music — same
-                    # client the upstream MA ytmusic provider uses and the one
-                    # that reliably yields opus/m4a. Without one, fall back to
-                    # tv_simply/mweb so at least some uploads can play.
-                    ["web_music"]
+                    # tv_simply yields the same opus/m4a tiers as web_music
+                    # (verified against the same video id: itag 249/250/251 opus
+                    # + itag 140 m4a). Prefer it because — as of 2026-11-01 —
+                    # googlevideo's CDN started 403-ing naked GETs against
+                    # web_music/mweb/android_music/web stream URLs; only a
+                    # specific chunked Range request gets 206, and ffmpeg's
+                    # default sequential GET can't satisfy that. tv_simply URLs
+                    # still accept a plain GET and stream through ffmpeg cleanly.
+                    # mweb kept as a last-ditch fallback when PO is unavailable.
+                    ["tv_simply"]
                     if po_token_server_url
                     else ["tv_simply", "mweb"]
                 ),
